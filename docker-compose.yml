@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  traccar:
+    image: traccar/traccar:latest
+    container_name: traccar
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 5000-5150:5000-5150
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traccar.yml:/opt/traccar/conf/traccar.xml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traccar.entrypoints=http"
+      - "traefik.http.routers.traccar.rule=Host(`DOMAIN_NAME_HERE`)"
+      - "traefik.http.middlewares.traccar-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.traccar.middlewares=traccar-https-redirect"
+      - "traefik.http.routers.traccar-secure.entrypoints=https"
+      - "traefik.http.routers.traccar-secure.rule=Host(`DOMAIN_NAME_HERE`)"
+      - "traefik.http.routers.traccar-secure.tls=true"
+      - "traefik.http.routers.traccar-secure.tls.certresolver=http"
+      - "traefik.http.routers.traccar-secure.service=traccar"
+      - "traefik.http.services.traccar.loadbalancer.server.port=8082"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
